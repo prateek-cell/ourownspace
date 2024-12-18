@@ -3,28 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Room</title>
+    <title>Password Protected Chat</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f9; }
-        .chat-box { max-width: 500px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; }
-        .messages { height: 300px; overflow-y: auto; padding: 10px; background: #f1f1f1; margin-bottom: 10px; }
-        input, button { width: 100%; padding: 10px; margin-top: 10px; }
-        .message { margin-bottom: 10px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; background: #e0e0e0; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f7f9fc; }
+        .container { max-width: 500px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        input, button { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .messages { height: 300px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 10px; padding: 10px; background: #f1f1f1; }
+        .message { padding: 5px; margin-bottom: 10px; border-radius: 5px; background: #e9ecef; }
+        .message.self { text-align: right; background: #cce5ff; }
     </style>
 </head>
 <body>
-    <div id="login">
-        <h2>Login to Chat</h2>
-        <input type="email" id="email" placeholder="Email" required />
-        <input type="password" id="password" placeholder="Password" required />
-        <button onclick="login()">Login</button>
+
+    <!-- Login Section -->
+    <div id="login" class="container">
+        <h2>Password Protected Chat</h2>
+        <input type="password" id="password" placeholder="Enter Password" />
+        <button onclick="checkPassword()">Login</button>
         <p id="error" style="color: red;"></p>
     </div>
 
-    <div id="chat" class="chat-box" style="display:none;">
+    <!-- Chat Section -->
+    <div id="chat" class="container" style="display: none;">
         <h2>Chat Room</h2>
         <div id="messages" class="messages"></div>
         <input id="messageInput" type="text" placeholder="Type your message..." />
@@ -32,56 +34,65 @@
     </div>
 
     <script>
-        // Firebase configuration
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyC5x3xsVjgQqQJBQA6KKe6aa3gp2DPVk6Q",
-            authDomain: "ourownspace-95613.firebaseapp.com",
-            databaseURL: "https://ourownspace-95613-default-rtdb.firebaseio.com",
-            projectId: "ourownspace-95613",
-            storageBucket: "ourownspace-95613.firebasestorage.app",
-            messagingSenderId: "450942676272",
-            appId: "1:450942676272:web:560e871097389e5edf6cf5"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         // Initialize Firebase
         const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.database();
 
-        // Login function
-        function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    document.getElementById('login').style.display = 'none';
-                    document.getElementById('chat').style.display = 'block';
-                    loadMessages();
-                })
-                .catch((error) => {
-                    document.getElementById('error').innerText = error.message;
-                });
+        // Predefined Password
+        const secretPassword = "strangers"; // Change this to your desired password
+
+        // Password Validation
+        function checkPassword() {
+            const enteredPassword = document.getElementById("password").value;
+            if (enteredPassword === secretPassword) {
+                document.getElementById("login").style.display = "none";
+                document.getElementById("chat").style.display = "block";
+                loadMessages();
+            } else {
+                document.getElementById("error").innerText = "Incorrect password!";
+            }
         }
 
-        // Load chat messages
+        // Load Messages
         function loadMessages() {
-            const messagesRef = db.ref('messages');
-            messagesRef.on('child_added', (snapshot) => {
-                const message = snapshot.val();
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message');
-                messageElement.textContent = message;
-                document.getElementById('messages').appendChild(messageElement);
-                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            const messagesRef = db.ref("messages");
+            messagesRef.on("child_added", (snapshot) => {
+                const messageData = snapshot.val();
+                const messageElement = document.createElement("div");
+                messageElement.classList.add("message");
+                if (messageData.sender === "self") {
+                    messageElement.classList.add("self");
+                }
+                messageElement.textContent = messageData.text;
+                document.getElementById("messages").appendChild(messageElement);
+                document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
             });
         }
 
-        // Send message function
+        // Send Message
         function sendMessage() {
-            const message = document.getElementById('messageInput').value;
-            const messagesRef = db.ref('messages');
-            messagesRef.push(message);
-            document.getElementById('messageInput').value = ''; // Clear the input field
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value;
+            if (!message) return;
+
+            const messagesRef = db.ref("messages");
+            messagesRef.push({
+                text: message,
+                sender: "self"
+            });
+
+            messageInput.value = ""; // Clear input
         }
     </script>
 </body>
