@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Chat</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f7f9fc; }
+        .chat-container { max-width: 500px; margin: 50px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        .messages { height: 300px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 10px; padding: 10px; background: #f1f1f1; }
+        input, button { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .message { padding: 5px; margin-bottom: 10px; border-radius: 5px; background: #e9ecef; }
+        .message.self { text-align: right; background: #cce5ff; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Chat Room</h2>
+        <div id="messages" class="messages"></div>
+        <input id="messageInput" type="text" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Load Messages
+        function loadMessages() {
+            const messagesRef = db.ref("messages");
+            messagesRef.on("child_added", (snapshot) => {
+                const messageData = snapshot.val();
+                const messageElement = document.createElement("div");
+                messageElement.classList.add("message");
+                if (messageData.sender === "self") {
+                    messageElement.classList.add("self");
+                }
+                messageElement.textContent = messageData.text;
+                document.getElementById("messages").appendChild(messageElement);
+                document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+            });
+        }
+
+        // Send Message
+        function sendMessage() {
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value;
+            if (!message) return;
+
+            const messagesRef = db.ref("messages");
+            messagesRef.push({
+                text: message,
+                sender: "self"
+            });
+
+            messageInput.value = ""; // Clear input
+        }
+
+        // Start loading messages on page load
+        loadMessages();
+    </script>
+</body>
+</html>
